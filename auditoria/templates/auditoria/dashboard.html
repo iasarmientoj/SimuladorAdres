@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+{% load humanize %}<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Control | Auditoría CGR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- (Mismos estilos anteriores se mantienen igual) --- */
+        :root {
+            --cgr-blue: #0F2C4C; 
+            --cgr-orange: #D13916; 
+            --gov-blue: #3366CC; 
+            --light-gray: #f4f4f4;
+            --text-dark: #333333;
+            --status-danger-bg: #ffebee;
+            --status-danger-text: #c62828;
+            --status-success-bg: #e8f5e9;
+            --status-success-text: #2e7d32;
+            --status-pending-bg: #fff8e1;
+            --status-pending-text: #f57f17;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--light-gray); color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
+        .gov-bar { background-color: var(--gov-blue); height: 32px; display: flex; align-items: center; justify-content: flex-end; padding: 0 5%; color: white; font-size: 0.8rem; font-family: 'Montserrat', sans-serif; }
+        header { background-color: white; padding: 1rem 5%; border-bottom: 4px solid var(--cgr-orange); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .logo-placeholder { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--cgr-blue); display: flex; flex-direction: column; line-height: 1.1; }
+        .logo-placeholder span { font-size: 0.8rem; color: var(--cgr-orange); }
+        .main-container { flex: 1; padding: 3rem 5%; display: flex; flex-direction: column; align-items: center; }
+        .dashboard-card { background: white; width: 100%; max-width: 1100px; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 6px solid var(--cgr-blue); }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee; }
+        .dashboard-header h1 { font-family: 'Montserrat', sans-serif; color: var(--cgr-blue); font-size: 1.5rem; }
+        .btn-new { background-color: var(--cgr-blue); color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; font-size: 0.9rem; transition: background 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-new:hover { background-color: #0a1f36; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        thead tr { background-color: #f8f9fa; text-align: left; }
+        th { padding: 15px; font-weight: 600; color: var(--cgr-blue); border-bottom: 2px solid #e0e0e0; font-family: 'Montserrat', sans-serif; }
+        td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tr:hover { background-color: #fcfcfc; }
+        .badge { padding: 6px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
+        .badge-fraude { background-color: var(--status-danger-bg); color: var(--status-danger-text); border: 1px solid rgba(198, 40, 40, 0.2); }
+        .badge-aprobado { background-color: var(--status-success-bg); color: var(--status-success-text); border: 1px solid rgba(46, 125, 50, 0.2); }
+        .badge-pendiente { background-color: var(--status-pending-bg); color: var(--status-pending-text); border: 1px solid rgba(245, 127, 23, 0.2); }
+        .btn-view-pdf { color: var(--cgr-blue); text-decoration: none; font-weight: 600; border: 1px solid var(--cgr-blue); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; transition: all 0.2s; }
+        .btn-view-pdf:hover { background-color: var(--cgr-blue); color: white; }
+        .empty-state { text-align: center; padding: 3rem; color: #777; }
+        footer { background-color: var(--cgr-blue); color: white; padding: 2rem 5%; font-size: 0.8rem; border-top: 5px solid var(--cgr-orange); margin-top: auto; text-align: center; }
+
+        /* Estilo para el nombre truncado */
+        .filename-truncated {
+            font-family: 'Roboto', monospace; /* Monospace ayuda a leer nombres de archivo */
+            color: #555;
+            cursor: help; /* Muestra signo de interrogación al pasar mouse */
+        }
+        /* Contenedor para alinear los botones en la celda */
+        .action-buttons {
+            display: flex;
+            gap: 10px; /* Espacio entre botones */
+            align-items: center;
+        }
+
+        /* Estilo del botón Eliminar (Naranja Institucional) */
+        .btn-delete {
+            color: var(--cgr-orange);
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid var(--cgr-orange); /* Borde delgado */
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--cgr-orange);
+            color: white;
+            border-color: var(--cgr-orange);
+        }
+        /* Estilo para el monto alineado a la derecha como en contabilidad (Opcional) */
+        .col-monto {
+            font-family: 'Roboto', monospace; /* Para que los números se alineen bien */
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gov-bar"><span>GOV.CO</span></div>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-placeholder">CONTRALORÍA<span>GENERAL DE LA REPÚBLICA</span></div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="dashboard-card">
+            
+            <div class="dashboard-header">
+                <h1>Resultados de Auditoría</h1>
+                <a href="{% url 'carga_soportes' %}" class="btn-new">+ Nueva Auditoría</a>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nombre Archivo</th> <th>Placa</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in registros %}
+                        <tr>
+                            <td>{{ item.fecha_creacion|date:"d/m/Y" }}</td>
+                            
+                            <td>
+                                {% if item.archivo_soat %}
+                                    <span class="filename-truncated" title="{{ item.archivo_soat.name }}">
+                                        {{ item.archivo_soat.name }}
+                                    </span>
+                                {% else %}
+                                    <span style="color:#ccc">---</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if item.placa_detectada %}<strong>{{ item.placa_detectada }}</strong>
+                                {% else %}<span style="color: #999;">---</span>{% endif %}
+                            </td>
+
+                            <td class="col-monto">
+                                {% if item.monto_detectado %}
+                                    $ {{ item.monto_detectado|intcomma }}
+                                {% else %}
+                                    <span style="color: #999;">$ 0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.resultado == 'FRAUDE' %}
+                                    <span class="badge badge-fraude">FRAUDE</span>
+                                {% elif item.resultado == 'APROBADO' %}
+                                    <span class="badge badge-aprobado">APROBADO</span>
+                                {% else %}
+                                    <span class="badge badge-pendiente">{{ item.resultado }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="action-buttons">
+                                    {% if item.archivo_soat %}
+                                        <a href="{{ item.archivo_soat.url }}" target="_blank" class="btn-view-pdf" title="Ver documento original">
+                                            📄 Ver
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'eliminar_auditoria' item.id %}" 
+                                       class="btn-delete"
+                                       onclick="return confirm('⚠️ ¿Está seguro que desea eliminar este registro?')">
+                                       🗑️
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <p>No se encontraron registros de auditoría.</p>
+                                    <br>
+                                    <a href="{% url 'carga_soportes' %}" style="color: #3366CC;">Realizar la primera auditoría</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Contraloría General de la República - Sistema de Auditoría Automática</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileSpans = document.querySelectorAll('.filename-truncated');
+
+            fileSpans.forEach(span => {
+                let fullPath = span.innerText.trim();
+                // 1. Obtener solo el nombre del archivo (quitar carpetas uploads/2025/etc)
+                let fileName = fullPath.split(/[/\\]/).pop();
+
+                // 2. Aplicar truncado si es muy largo (ej: más de 20 caracteres)
+                if (fileName.length > 20) {
+                    const startChars = 8;  // Caracteres al inicio
+                    const endChars = 8;    // Caracteres al final
+                    
+                    const start = fileName.substring(0, startChars);
+                    const end = fileName.substring(fileName.length - endChars);
+                    
+                    span.innerText = `${start}...${end}`;
+                } else {
+                    span.innerText = fileName;
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Auditoría Automática | CGR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cgr-blue: #0F2C4C;
+            --cgr-orange: #D13916;
+            --gov-blue: #3366CC;
+            --light-gray: #f4f4f4;
+            --text-dark: #333333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- Estilos Institucionales (Header/Nav) --- */
+        .gov-bar {
+            background-color: var(--gov-blue);
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 5%;
+            color: white;
+            font-size: 0.8rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        header {
+            background-color: white;
+            padding: 1rem 5%;
+            border-bottom: 4px solid var(--cgr-orange);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .logo-placeholder {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--cgr-blue);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        .logo-placeholder span { font-size: 0.8rem; color: var(--cgr-orange); }
+
+        /* --- Contenido Principal --- */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1rem;
+        }
+
+        .audit-card {
+            background: white;
+            width: 100%;
+            max-width: 650px;
+            padding: 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--cgr-blue);
+            text-align: center;
+        }
+
+        .audit-card h1 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--cgr-blue);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .audit-card p {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        /* --- NUEVO: Estilos para Mensajes (Alerts) --- */
+        .alert-container {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .alert-box {
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid transparent;
+        }
+
+        /* Mapeo de tags de Django a colores */
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left-color: #2e7d32;
+        }
+        .alert-error, .alert-danger { /* Django a veces usa 'error', Bootstrap 'danger' */
+            background-color: #ffebee;
+            color: #c62828;
+            border-left-color: var(--cgr-orange);
+        }
+        .alert-warning {
+            background-color: #fff8e1;
+            color: #f57f17;
+            border-left-color: #f57f17;
+        }
+
+        .btn-close-alert {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        .btn-close-alert:hover { opacity: 1; }
+
+
+        /* --- Formulario Drag & Drop --- */
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            padding: 3rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background-color: #fafafa;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--cgr-blue);
+            background-color: #eef2f6;
+        }
+
+        .upload-icon { font-size: 3rem; color: var(--cgr-blue); margin-bottom: 1rem; }
+        .upload-text { font-size: 1rem; color: #555; font-weight: 500; }
+        .upload-subtext { font-size: 0.8rem; color: #999; margin-top: 0.5rem; }
+
+        #id_archivo_soat {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer;
+        }
+
+        #file-name-display {
+            margin-top: 1rem; font-weight: bold; color: var(--cgr-orange); display: none;
+        }
+
+        .btn-auditar {
+            background-color: var(--cgr-blue);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-auditar:hover { background-color: #0a1f36; box-shadow: 0 2px 8px rgba(15, 44, 76, 0.3); }
+        .btn-auditar:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* --- Footer --- */
+        footer {
+            background-color: var(--cgr-blue); color: white; padding: 3rem 5%; font-size: 0.85rem; border-top: 5px solid var(--cgr-orange);
+        }
+        .footer-content { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2rem; max-width: 1200px; margin: 0 auto; }
+        .footer-col h4 { font-family: 'Montserrat', sans-serif; margin-bottom: 1rem; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+        .footer-col p { line-height: 1.6; color: #e0e0e0; }
+
+
+        /* --- NUEVO: Overlay de Carga y Spinner CSS --- */
+        #overlay-carga {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 44, 76, 0.9); /* Azul CGR con transparencia */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(4px); /* Efecto difuminado moderno */
+        }
+
+        /* Animación del Spinner */
+        .custom-spinner {
+            width: 4rem;
+            height: 4rem;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--cgr-orange); /* Color naranja girando */
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-title {
+            color: white; font-family: 'Montserrat', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem;
+        }
+        .loading-text { color: #ccc; font-size: 0.9rem; }
+        .loading-warning { color: #FFD54F; font-size: 0.8rem; margin-top: 1rem; font-weight: 500; }
+
+    </style>
+</head>
+<body>
+
+    <div id="overlay-carga">
+        <div class="custom-spinner"></div>
+        <h4 class="loading-title">Analizando Documento...</h4>
+        <p class="loading-text">Aplicando OCR e Inteligencia Artificial</p>
+        <p class="loading-warning">Esto puede tardar unos segundos, por favor no recargue.</p>
+    </div>
+
+    <div class="gov-bar"><span>GOV.CO</span></div>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-placeholder">CONTRALORÍA<span>GENERAL DE LA REPÚBLICA</span></div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        {% if messages %}
+        <div class="alert-container">
+            {% for message in messages %}
+                <div class="alert-box alert-{{ message.tags }}">
+                    <span><strong>Atención:</strong> {{ message }}</span>
+                    <button type="button" class="btn-close-alert" onclick="this.parentElement.style.display='none'">×</button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="audit-card">
+            <h1>Sistema de Auditoría Automática</h1>
+            <p>Sube el archivo PDF o Imagen del SOAT para iniciar el proceso de validación fiscal.</p>
+
+            <form method="post" enctype="multipart/form-data" id="auditForm">
+                {% csrf_token %}
+
+                <div class="upload-area" id="drop-zone">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Arrastra el documento aquí o haz clic para buscar</div>
+                    <div class="upload-subtext">Formato permitido: PDF, JPG, PNG, JPEG (Máx 10MB)</div>
+                    
+                    <input type="file" name="archivo_soat" id="id_archivo_soat" accept=".pdf" required>
+                </div>
+
+                <div id="file-name-display"></div>
+
+                {% if form.archivo_soat.errors %}
+                    <div class="alert-box alert-error" style="margin-top: 10px;">
+                        {{ form.archivo_soat.errors }}
+                    </div>
+                {% endif %}
+
+                <br>
+                <button type="submit" class="btn-auditar" id="btn-submit">
+                    Auditar Documento
+                </button>
+            </form>
+            
+            <br>
+            <a href="{% url 'dashboard' %}" style="color: var(--gov-blue); font-size: 0.9rem; text-decoration: none;">← Ver Historial de Auditorías</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4>Contraloría General de la República</h4>
+                <p>Carrera 69 No 44-35<br>Bogotá, Colombia</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <p>PBX: (+57) 601 518 7000<br>cgr@contraloria.gov.co</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem; font-size: 0.7rem; opacity: 0.6;">
+            Copyright © 2025 Contraloría General de la República
+        </div>
+    </footer>
+
+    <script>
+        // Elementos para Drag & Drop
+        const fileInput = document.getElementById('id_archivo_soat');
+        const dropZone = document.getElementById('drop-zone');
+        const fileNameDisplay = document.getElementById('file-name-display');
+
+        // Elementos para Overlay
+        const formulario = document.getElementById('auditForm');
+        const overlay = document.getElementById('overlay-carga');
+        const botonSubmit = document.getElementById('btn-submit');
+
+        // 1. Lógica Visual Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault(); dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileName();
+            }
+        });
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = "Archivo seleccionado: " + fileInput.files[0].name;
+                fileNameDisplay.style.display = 'block';
+                dropZone.style.borderColor = '#4CAF50';
+                dropZone.querySelector('.upload-text').textContent = "¡Archivo listo!";
+                dropZone.querySelector('.upload-icon').textContent = "✅";
+            }
+        }
+
+        // 2. Lógica del Overlay al enviar
+        if (formulario) {
+            formulario.addEventListener('submit', function(event) {
+                // Verificar que se haya seleccionado un archivo antes de bloquear la pantalla
+                if (fileInput.files.length === 0) {
+                    // Si el input tiene 'required', el navegador lo detendrá, 
+                    // pero es bueno prevenir por si acaso
+                    return; 
+                }
+
+                // Mostrar Overlay
+                overlay.style.display = 'flex';
+                
+                // Feedback en el botón
+                if(botonSubmit) {
+                    botonSubmit.disabled = true;
+                    botonSubmit.innerText = "PROCESANDO...";
+                    botonSubmit.style.opacity = "0.7";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
