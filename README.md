@@ -20,13 +20,18 @@ Plataforma web desarrollada en Django para la validación automática de Seguros
 ## 📦 Instalación Local
 
 1. Clonar el repositorio:
+   ```bash
    git clone [https://github.com/TU_USUARIO/sistema-auditoria-soat.git](https://github.com/TU_USUARIO/sistema-auditoria-soat.git)
-   
+   ```
 2. Instalar dependencias:
+   ```bash
    pip install -r requirements.txt
-
+   ```
 3. Migrar base de datos:
+   ```bash
    python manage.py migrate
-   
+   ```
 4. Correr servidor:
+   ```bash
    python manage.py runserver
+   ```
